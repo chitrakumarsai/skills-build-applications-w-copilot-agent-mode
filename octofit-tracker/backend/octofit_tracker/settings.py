@@ -25,7 +25,13 @@ SECRET_KEY = 'django-insecure-pykq4$am8j&w7nroc^#_wazw0fv%2_%hufx=9gy9_r=t#6s502
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+import os
+# Dynamically set allowed hosts for codespace and localhost
+codespace_name = os.environ.get('CODESPACE_NAME')
+allowed_hosts = ['localhost', '127.0.0.1']
+if codespace_name:
+    allowed_hosts.append(f"{codespace_name}-8000.app.github.dev")
+ALLOWED_HOSTS = allowed_hosts
 
 
 # Application definition
@@ -77,18 +83,22 @@ WSGI_APPLICATION = 'octofit_tracker.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+import os
+MONGODB_NOAUTH = os.environ.get('MONGODB_NOAUTH', '1') == '1'
 DATABASES = {
     'default': {
         'ENGINE': 'djongo',
         'NAME': 'octofit_db',
         'ENFORCE_SCHEMA': False,
         'CLIENT': {
-            'host': 'localhost',
-            'port': 27017,
-            'username': '',
-            'password': '',
-            'authSource': 'admin',
-            'authMechanism': 'SCRAM-SHA-1',
+            'host': os.environ.get('MONGODB_HOST', 'localhost'),
+            'port': int(os.environ.get('MONGODB_PORT', 27017)),
+            **({} if MONGODB_NOAUTH else {
+                'username': os.environ.get('MONGODB_USERNAME', ''),
+                'password': os.environ.get('MONGODB_PASSWORD', ''),
+                'authSource': os.environ.get('MONGODB_AUTHSOURCE', 'admin'),
+                'authMechanism': os.environ.get('MONGODB_AUTHMECHANISM', 'SCRAM-SHA-1'),
+            }),
         },
     }
 }
